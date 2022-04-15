@@ -102,7 +102,7 @@
 
 ---
 # API 기능정의서
-<img width="1676" alt="스크린샷 2022-03-13 오후 8 11 19" src="https://user-images.githubusercontent.com/60570733/158056769-5434eb35-772b-40e2-9a61-5edb6731089e.png">
+https://documenter.getpostman.com/view/19578089/Uyr4Lg2t
 
 * 포스트맨을 이용해 API 문서화를 진행했습니다.
 * 이번 프로젝트에서 쿼리파라미터(size, price, created, offset, limit 등)로 많은 값들을 받아야했기 때문에 API 문서화가 굉장히 중요했습니다.
