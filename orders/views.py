@@ -1,14 +1,14 @@
 import json, uuid
-from tkinter.messagebox import CANCEL
-from enum import Enum
+
+from enum          import Enum
 
 from django.http   import JsonResponse
 from django.views  import View
 from django.db     import transaction
 
 from users.utils   import login_decorator
+from orders.models import Order, OrderItem, OrderStatus
 from carts.models  import Cart
-from orders.models import Order,OrderItem, OrderStatus
 
 class OrderStatusEnum(Enum):
     CONFIRMED = 1  
@@ -16,6 +16,28 @@ class OrderStatusEnum(Enum):
     PENDING   = 3
 
 class OrderView(View):
+    @login_decorator
+    def get(self, request):
+        try:
+            orders = Order.objects.select_related('user').select_related('order_status').filter(user_id = request.user)
+            result = []
+            
+            for order in orders:
+                results = {
+                    'orderer' : order.user.name,
+                    'order_number' : order.order_number,
+                    'order_status' : order.order_status.status
+                }
+
+                result.append(results)
+
+
+            return JsonResponse({"message" : result}, status = 200)
+        
+        except Order.DoesNotExist:
+            return JsonResponse({"message" : "DOES_NOT_EXIST"})
+
+
     @login_decorator
     def post(self, request):
         try:
@@ -54,4 +76,3 @@ class OrderView(View):
             return JsonResponse({'message':'TransactionManagementError'}, status=400)  
         except KeyError:
             return JsonResponse({"message" : "KEYERROR"}, status=400)
-        
