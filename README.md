@@ -113,7 +113,7 @@ https://documenter.getpostman.com/view/19578089/Uyr4Lg2t
 
 ---
 # 시연 영상
-https://user-images.githubusercontent.com/90089275/163701371-67edde41-1e0c-4654-92e4-116fed0a79bb.mp4
+[Youtube](https://youtu.be/3wGIhtv6w3Q)
 
 
 <br><br>
