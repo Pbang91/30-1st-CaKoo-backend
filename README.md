@@ -113,11 +113,7 @@ https://documenter.getpostman.com/view/19578089/Uyr4Lg2t
 
 ---
 # 시연 영상
-
-![로그인](https://user-images.githubusercontent.com/90089275/158054617-ecaac1da-f80c-4217-add2-42f94693e431.gif)
-![상품상세](https://user-images.githubusercontent.com/90089275/158054619-54713ed7-3836-4d73-b9d0-f639dc61df29.gif)
-![장바구니](https://user-images.githubusercontent.com/90089275/158054623-0376486c-cbda-428b-ac5b-29befe9cc2d0.gif)
-![주문결제](https://user-images.githubusercontent.com/90089275/158054624-86307905-960a-4ed3-8c49-44bc23b51ec8.gif)
+https://user-images.githubusercontent.com/90089275/163701371-67edde41-1e0c-4654-92e4-116fed0a79bb.mp4
 
 
 <br><br>
