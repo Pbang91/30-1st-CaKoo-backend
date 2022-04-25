@@ -1,7 +1,6 @@
 import functools, time
 
 from django.db   import connection, reset_queries
-from config      import settings
 
 
 def query_debugger(func):

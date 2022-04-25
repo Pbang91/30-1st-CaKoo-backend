@@ -1,9 +1,9 @@
 import json, bcrypt, jwt
-from django.forms import EmailField, ValidationError
+from xml.dom import ValidationErr
 
+from django.forms     import ValidationError
 from django.http      import JsonResponse
 from django.views     import View
-from pymysql import DatabaseError, IntegrityError
 
 from users.models     import User
 from users.validators import validate_email_and_password
@@ -33,8 +33,6 @@ class SignUpView(View):
                 user.save()
 
                 return JsonResponse({"message": "SUCCESS"}, status = 201)
-
-            return JsonResponse({'message' : 'INVALID_FORM'}, status = 400)
         
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status = 400)
