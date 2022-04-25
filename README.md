@@ -54,7 +54,7 @@
     * Back-end   
         * 김기현 - SignUp, Product List API, Order API
         * 이지원 - Cart API
-        * 박건규 - SignIn, Product Detail API, Order API
+        * 박건규 - SignUp, SignIn, Product Detail API, Order API
 <br><br>
 
 ---
