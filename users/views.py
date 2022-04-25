@@ -1,46 +1,47 @@
 import json, bcrypt, jwt
+from django.forms import EmailField, ValidationError
 
-from django.http            import JsonResponse
-from django.views           import View
-from users.models           import User
-from users.validators       import validate_email, validate_password
-from config.settings        import SECRET_KEY, ALGORITHM
+from django.http      import JsonResponse
+from django.views     import View
+from pymysql import DatabaseError, IntegrityError
+
+from users.models     import User
+from users.validators import validate_email_and_password
+from config.settings  import SECRET_KEY, ALGORITHM
+from decorator        import query_debugger
 
 class SignUpView(View):
+    @query_debugger
     def post(self, request):
         try:
             data = json.loads(request.body)
 
-            name         = data['name']
-            email        = data['email']
-            password     = data['password']
-            phone_number = data['phone_number']
-            birthdate    = data['birthdate']
+            validated_email, validated_password = validate_email_and_password(email = data['email'], password = data['password'])
 
-            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-            if not validate_email(email):
-                return JsonResponse({'message' : 'INVALID_EMAIL'}, status = 400)
-            
-            if not validate_password(password):
-                return JsonResponse({'message' : 'INVALID_PASSWORD!'}, status = 400)
-            
-            if User.objects.filter(email = email).exists():
-                return JsonResponse({'message' : 'EMAIL_EXISTS'}, status = 400)
-
-            User.objects.create(
-                name         = name,
-                email        = email,
-                password     = hashed_password,
-                phone_number = phone_number,
-                birthdate    = birthdate
+            if validated_email and validated_password:
+                hashed_password = bcrypt.hashpw(validated_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
                 
-            )
-            return JsonResponse({"message": "User Created!"}, status=201)
+                user = User(
+                            name         = data['name'],
+                            email        = validated_email,
+                            password     = hashed_password,
+                            phone_number = data['phone_number'],
+                            birthdate    = data['birthdate']
+                        )
+                
+                user.full_clean()
+                user.save()
 
+                return JsonResponse({"message": "SUCCESS"}, status = 201)
+
+            return JsonResponse({'message' : 'INVALID_FORM'}, status = 400)
+        
         except KeyError:
-            return JsonResponse({"message": "KEY_ERROR"}, status=400)
-
+            return JsonResponse({"message": "KEY_ERROR"}, status = 400)
+        
+        except ValidationError as err:
+            return JsonResponse({"message" : str(err)}, status = 400)
+        
 
 class SignInView(View):
     def post(self, request):
