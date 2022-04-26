@@ -1,5 +1,4 @@
 import re
-from xml.dom import ValidationErr
 
 from django.forms import ValidationError
 
