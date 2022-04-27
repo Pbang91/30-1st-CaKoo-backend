@@ -38,6 +38,9 @@ class ProductDetailView(View):
 
         except Product.DoesNotExist:
             return JsonResponse({"message" : "INVALID_PRODUCT"}, status = 404)
+        
+        except IndexError:
+            return JsonResponse({"message" : "INVALID_PRODUCT"}, status = 404)
 
 class ProductsView(View):
     def get(self, request): 
