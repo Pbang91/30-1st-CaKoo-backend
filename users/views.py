@@ -15,21 +15,26 @@ class SignUpView(View):
     @query_debugger
     def post(self, request):
         try:
-            data = json.loads(request.body)
+            request_data = json.loads(request.body)
+            
+            user_email : str        = request_data['email']
+            user_password : str     = request_data['password']
+            user_name : str         = request_data['name']
+            user_phone_number : str = request_data['phone_number']
+            user_birthdate : str    = request_data['birthdate']
 
-            validated_email, validated_password = validate_email_and_password(email = data['email'],
-                                                                              password = data['password']
-                                                  )
+            validated_email, validated_password = validate_email_and_password(email    = user_email,
+                                                                              password = user_password)
             
             hashed_password = bcrypt.hashpw(validated_password.encode('utf-8'),
                                             bcrypt.gensalt()).decode('utf-8')
             
             user = User(
-                        name         = data['name'],
+                        name         = user_name,
                         email        = validated_email,
                         password     = hashed_password,
-                        phone_number = data['phone_number'],
-                        birthdate    = data['birthdate']
+                        phone_number = user_phone_number,
+                        birthdate    = user_birthdate
                     )
             
             user.full_clean()
@@ -47,14 +52,17 @@ class SignUpView(View):
 class SignInView(View):
     def post(self, request):
         try:
-            data            = json.loads(request.body)
-            signin_email    = data['email']
-            signin_password = data['password']
-
-            user = User.objects.get(email = signin_email)
+            request_data = json.loads(request.body)
             
-            if not bcrypt.checkpw(signin_password.encode('utf-8'), user.password.encode('utf-8')):
-                return JsonResponse({"message" : "INVALID_USER"}, status = 401)
+            user_email : str    = request_data['email']
+            user_password : str = request_data['password']
+
+            user = User.objects.get(email = user_email)
+
+            checked_password = bcrypt.checkpw(user_password.encode('utf-8'), user.password.encode('utf-8'))
+            
+            if not checked_password:
+                raise User.DoesNotExist
             
             access_token = jwt.encode({'user_id' : user.id, 'exp' : datetime.utcnow() + timedelta(days=2)}, SECRET_KEY, ALGORITHM)
             
