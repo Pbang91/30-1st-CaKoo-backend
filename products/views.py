@@ -2,14 +2,14 @@ from django.http      import JsonResponse
 from django.views     import View
 from django.db.models import Min, Q, Prefetch
 
-from products.models  import Product, ProductSize
+from products.models  import Product, ProductSize, Size
 from decorator        import query_debugger
 
 class ProductDetailView(View):
     @query_debugger
     def get(self, request, product_id):
         try:
-            products         = [product for product in Product.objects.filter(id = product_id).annotate(base_price=Min("productsizes__price")).prefetch_related(Prefetch('productimages'),
+            products : list = [product for product in Product.objects.filter(id = product_id).annotate(base_price=Min("productsizes__price")).prefetch_related(Prefetch('productimages'),
                                                                                                                                                                 Prefetch('informationimages'),
                                                                                                                                                                 Prefetch('productsizes', 
                                                                                                                                                                          queryset=ProductSize.objects.select_related('size')
@@ -35,14 +35,12 @@ class ProductDetailView(View):
             }
             
             return JsonResponse({"message" : result}, status = 200)
-
-        except Product.DoesNotExist:
-            return JsonResponse({"message" : "INVALID_PRODUCT"}, status = 404)
         
         except IndexError:
             return JsonResponse({"message" : "INVALID_PRODUCT"}, status = 404)
 
 class ProductsView(View):
+    @query_debugger
     def get(self, request): 
         try:
             sort     = request.GET.get('sort', "recent")
@@ -54,7 +52,7 @@ class ProductsView(View):
                 
             if size:
                 size = size.split(',')
-                q &= Q(sizes__in=size)
+                q &= Q(sizes__id__in=size)
             
             sort_set = {
                 'recent'    : '-created_at',
@@ -63,20 +61,23 @@ class ProductsView(View):
                 'cheap'     : 'base_price' 
             } 
                       
-            products = Product.objects.annotate(base_price=Min('productsizes__price'))
+            products = Product.objects.annotate(base_price=Min('productsizes__price'))\
+                                      .filter(q).prefetch_related(Prefetch('sizes', queryset=Size.objects.all().order_by('id')))\
+                                      .order_by(sort_set[sort])
             
             results = [{
                 "id"             : product.id,
                 "name"           : product.name,
                 "description"    : product.description,
                 "thumbnail"      : product.thumbnail,
-                "sizes"          : [size.size for size in product.sizes.all().order_by('id')],
+                "sizes"          : [size.size for size in product.sizes.all()],
                 "discount_rate"  : float(product.discount_rate),
                 "price"          : int(product.base_price), 
                 "discount_price" : int(product.base_price * product.discount_rate)
-            } for product in products.filter(q).order_by(sort_set[sort])[offset:offset+limit]]
-                
+            } for product in products[offset:limit]]
+            
 
             return JsonResponse({"lists" : results}, status = 200)
+
         except KeyError:
             return JsonResponse({'message': 'KEY_ERROR'}, status=400)
