@@ -50,6 +50,7 @@ class SignUpView(View):
         
 
 class SignInView(View):
+    @query_debugger
     def post(self, request):
         try:
             request_data = json.loads(request.body)
