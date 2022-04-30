@@ -9,11 +9,11 @@ class ProductDetailView(View):
     @query_debugger
     def get(self, request, product_id):
         try:
-            products : list = [product for product in Product.objects.filter(id = product_id).annotate(base_price=Min("productsizes__price")).prefetch_related(Prefetch('productimages'),
-                                                                                                                                                                Prefetch('informationimages'),
-                                                                                                                                                                Prefetch('productsizes', 
-                                                                                                                                                                         queryset=ProductSize.objects.select_related('size')
-                                                                                                                                                                ))]
+            products : list = [product for product in Product.objects.filter(id = product_id)\
+                                                                     .annotate(base_price=Min("productsizes__price"))
+                                                                     .prefetch_related(Prefetch('productimages'),
+                                                                                       Prefetch('informationimages'),
+                                                                                       Prefetch('productsizes', queryset=ProductSize.objects.select_related('size')))]
             product          = products[0]
             product_urls     = [image.url for image in product.productimages.all()]
             information_urls = [information_image.url for information_image in product.informationimages.all()]
