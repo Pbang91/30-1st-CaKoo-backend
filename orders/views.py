@@ -19,7 +19,7 @@ class OrderView(View):
     @login_decorator
     def get(self, request):
         try:
-            orders = Order.objects.select_related('user').select_related('order_status').filter(user_id = request.user)
+            orders = Order.objects.filter(user_id = request.user).select_related('user', 'order_status')
             result = []
             
             for order in orders:
@@ -65,14 +65,19 @@ class OrderView(View):
                         product_size = cart.product_size,
                         quantity     = cart.quantity
                     ) for cart in carts
-                ]     
+                ]
+                
                 OrderItem.objects.bulk_create(order_items) 
                     
                 
-            carts.delete()
-            return JsonResponse({"message" : "SUCCESS"}, status=201)
+                carts.delete()
+                return JsonResponse({"message" : "SUCCESS"}, status = 201)
 
         except transaction.TransactionManagementError:
-            return JsonResponse({'message':'TransactionManagementError'}, status=400)  
+            return JsonResponse({'message':'TransactionManagementError'}, status = 400)  
+
         except KeyError:
-            return JsonResponse({"message" : "KEYERROR"}, status=400)
+            return JsonResponse({"message" : "KEYERROR"}, status = 400)
+        
+        except (Cart.DoesNotExist, OrderStatus.DoesNotExist):
+            return JsonResponse({"message" : "INVALID_ERROR"}, status = 400)
