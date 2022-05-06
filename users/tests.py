@@ -2,6 +2,8 @@ from django.test   import TestCase, Client
 
 import json
 
+from .models       import User
+
 class SignUpTest(TestCase):
     def setUp(self):
         self.email        = 'test@test.com'
@@ -90,3 +92,18 @@ class SignUpTest(TestCase):
         response = client.post('/users/signup', json.dumps(data), content_type='application/json')
 
         self.assertEqual(response.status_code, 400)
+
+class SignInTest(TestCase):
+    def setUp(self):
+        User.objects.create(
+            name         = 'test',
+            email        = 'test@test.com',
+            password     = 'test123!!!'
+            phone_number = '010-1234-5678'
+            birthdate    = '1990-01-01'
+        )
+
+    def tearDown(self):
+        User.objects.all().delete()
+    
+    def test_success_get_signin_email(self):
