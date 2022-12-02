@@ -1,76 +1,41 @@
-import json, bcrypt, jwt
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 
-from datetime         import datetime, timedelta
+from drf_yasg.utils import swagger_auto_schema
 
-from django.forms     import ValidationError
-from django.http      import JsonResponse
-from django.views     import View
+from decorator import query_debugger
 
-from users.models     import User
-from users.validators import validate_email_and_password
-from config.settings  import SECRET_KEY, ALGORITHM
-from decorator        import query_debugger
+from .serializers import UserSignUpSerializer, UserLoginSerializer
 
-class SignUpView(View):
+permission_classes = [AllowAny]
+
+class SignUp(APIView):
+    @swagger_auto_schema(request_body=UserSignUpSerializer, responses={201: UserSignUpSerializer, 400: "Invalid Information"}, tags=["User"], operation_summary="Sign up", operation_description="Need emmail, password, phone_number, birthdate")
+    # @query_debugger
+    def post(self, request):
+        serializer = UserSignUpSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+
+class LogIn(APIView):
+    @swagger_auto_schema(request_body=UserLoginSerializer, responses={200: UserLoginSerializer, 400: "Invalid User"}, tags=["User"], operation_summary="Login", operation_description="Need email, password")
     @query_debugger
     def post(self, request):
-        try:
-            request_data = json.loads(request.body)
-            
-            user_email : str        = request_data['email']
-            user_password : str     = request_data['password']
-            user_name : str         = request_data['name']
-            user_phone_number : str = request_data['phone_number']
-            user_birthdate : str    = request_data['birthdate']
+        serializer = UserLoginSerializer(data=request.data)
 
-            validated_email, validated_password = validate_email_and_password(email    = user_email,
-                                                                              password = user_password)
+        if serializer.is_valid():
+            data = serializer.data
             
-            hashed_password = bcrypt.hashpw(validated_password.encode('utf-8'),
-                                            bcrypt.gensalt()).decode('utf-8')
-            
-            user = User(
-                        name         = user_name,
-                        email        = validated_email,
-                        password     = hashed_password,
-                        phone_number = user_phone_number,
-                        birthdate    = user_birthdate
-                    )
-            
-            user.full_clean()
-            user.save()
-
-            return JsonResponse({"message": "SUCCESS"}, status = 201)
+            return Response(data, status=status.HTTP_200_OK)
         
-        except KeyError:
-            return JsonResponse({"message": "KEY_ERROR"}, status = 400)
-        
-        except ValidationError as err:
-            return JsonResponse({"message" : str(err)}, status = 400)
-        
-
-class SignInView(View):
-    @query_debugger
-    def post(self, request):
-        try:
-            request_data = json.loads(request.body)
-            
-            user_email : str    = request_data['email']
-            user_password : str = request_data['password']
-
-            user = User.objects.get(email = user_email)
-
-            checked_password = bcrypt.checkpw(user_password.encode('utf-8'), user.password.encode('utf-8'))
-            
-            if not checked_password:
-                raise User.DoesNotExist
-            
-            access_token = jwt.encode({'user_id' : user.id, 'exp' : datetime.utcnow() + timedelta(days=2)}, SECRET_KEY, ALGORITHM)
-            
-            return JsonResponse({"message" : "SUCCESS", "access_token" : access_token}, status = 200)
-            
-        except KeyError:
-            return JsonResponse({"message" : "KEY_ERROR"}, status = 400)
-        
-        except User.DoesNotExist:
-            return JsonResponse({"message" : "INVALID_USER"}, status = 400)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
