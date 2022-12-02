@@ -12,13 +12,11 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 import pymysql
 
 from pathlib import Path
-from secret  import SECRET_KEY, DATABASES, ALGORITHM
-
 
 pymysql.install_as_MySQLdb()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+from secret  import SECRET_KEY, DATABASES, ALGORITHM
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -46,7 +44,7 @@ INSTALLED_APPS = [
     'products',
     'carts',
     'orders',
-
+    'rest_framework'
 ]
 
 MIDDLEWARE = [
