@@ -1,109 +1,147 @@
-from django.test   import TestCase, Client
-
 import json
+
+from django.urls import reverse
+
+from rest_framework.test import APITestCase
 
 from .models       import User
 
-class SignUpTest(TestCase):
+class UserSignUpTest(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        User.objects.create(
+            name = "user",
+            email = "user@test.com",
+            password = "test1234!",
+            phone_number = "010-0000-0000",
+            birthdate = "1900-01-01"
+        )
+    
     def setUp(self):
-        self.email        = 'test@test.com'
-        self.password     = 'test123!!'
-        self.name         = 'testman'
-        self.phone_number = '010-1234-5678'
-        self.birthdate    = '1990-01-01'
+        self.url = reverse('signup')
 
-    def test_success_post_to_signup_email(self):
-        client = Client()
-
+    def test_success_user_signup(self):
         data = {
-            'email'        : self.email,
-            'password'     : self.password,
-            'name'         : self.name,
-            'phone_number' : self.phone_number,
-            'birthdate'    : self.birthdate
+            "name" : "testman",
+            "email" : "test@test.com",
+            "password" : "test1234!",
+            "phone_number" : "010-0000-0000",
+            "birthdate" : "1900-01-01"
         }
 
-        response = client.post('/users/signup', json.dumps(data), content_type='application/json')
+        url = self.url
+
+        response = self.client.post(url, data=json.dumps(data), content_type='application/json')
 
         self.assertEqual(response.status_code, 201)
-
         self.assertEqual(
             response.json(),
             {
-                'message' : 'SUCCESS'
+                "name" : "testman",
+                "email" : "test@test.com",
+                "phone_number" : "010-0000-0000",
+                "birthdate" : "1900-01-01"
+            }
+        )
+    def test_fail_user_signup_due_to_email_required(self):
+        data = {
+            'password'     : "test1234!",
+            'name'         : "testman",
+            'phone_number' : "010-0000-0000",
+            'birthdate'    : "1900-01-01"
+        }
+
+        url = self.url
+
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {
+                "email" : ['This field is required.']
+            }
+        )
+    
+    def test_fail_user_signp_due_to_invalid_email(self):
+        data = {
+            'email'        : 'invalid_email@testcom',
+            'password'     : "test1234!",
+            'name'         : "testman",
+            'phone_number' : "010-0000-0000",
+            'birthdate'    : "1900-01-01"
+        }
+
+        url = self.url
+
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {
+                "email" : ["Enter a valid email address."]
+            }
+        )
+    
+    def test_fail_user_signup_due_to_password_required(self):
+        data = {
+            'email'        : 'test.test@test.com',
+            'name'         : "testman",
+            'phone_number' : "010-0000-0000",
+            'birthdate'    : "1900-01-01"
+        }
+
+        url = self.url
+
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {
+                "password" : ['This field is required.']
             }
         )
 
-    def test_fail_post_to_signup_invalid_email(self):
-        client = Client()
-
+    def test_fail_user_signup_due_to_invalid_password_not_special_symbols(self):
         data = {
-            'email'        : 'invalid_email@testcom',
-            'password'     : self.password,
-            'name'         : self.name,
-            'phone_number' : self.phone_number,
-            'birthdate'    : self.birthdate
-        }
-
-        response = client.post('/users/signup', json.dumps(data), content_type='application/json')
-
-        self.assertEqual(response.status_code, 400)
-
-    def test_fail_post_to_signup_invalid_password_not_special_symbols(self):
-        client = Client()
-
-        data = {
-            'email'        : self.email,
+            'email'        : "test@test.com",
             'password'     : 'test12345',
-            'name'         : self.name,
-            'phone_number' : self.phone_number,
-            'birthdate'    : self.birthdate
+            'name'         : "testman",
+            'phone_number' : "010-0000-0000",
+            'birthdate'    : "1900-01-01"
         }
+        
+        url = self.url
 
-        response = client.post('/users/signup', json.dumps(data), content_type='application/json')
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
 
         self.assertEqual(response.status_code, 400)
-    
-    def test_fail_post_to_signup_invalid_password_less_than_8(self):
-        client = Client()
-
-        data = {
-            'email'        : self.email,
-            'password'     : 'test',
-            'name'         : self.name,
-            'phone_number' : self.phone_number,
-            'birthdate'    : self.birthdate
-        }
-
-        response = client.post('/users/signup', json.dumps(data), content_type='application/json')
-
-        self.assertEqual(response.status_code, 400)
-    
-    def test_fail_post_to_signup_key_error(self):
-        client = Client()
-
-        data = {
-            'email'        : self.email,
-            'name'         : self.name,
-            'phone_number' : self.phone_number,
-            'birthdate'    : self.birthdate
-        }
-
-        response = client.post('/users/signup', json.dumps(data), content_type='application/json')
-
-        self.assertEqual(response.status_code, 400)
-
-class SignInTest(TestCase):
-    def setUp(self):
-        User.objects.create(
-            name         = 'test',
-            email        = 'test@test.com',
-            password     = 'test123!!!'
-            phone_number = '010-1234-5678'
-            birthdate    = '1990-01-01'
+        self.assertEqual(
+            response.json(),
+            {
+                "detail" : "Invalid Information"
+            }
         )
-
-    def tearDown(self):
-        User.objects.all().delete()
     
-    def test_success_get_signin_email(self):
+    def test_fail_user_signup_due_to_invalid_password_less_than_8(self):
+        data = {
+            'email'        : "test@test.com",
+            'password'     : 'test',
+            'name'         : "testman",
+            'phone_number' : "010-0000-0000",
+            'birthdate'    : "1900-01-01"
+        }
+
+        url = self.url
+
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {
+                "detail" : "Invalid Information"
+            }
+        )

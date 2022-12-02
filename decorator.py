@@ -1,7 +1,7 @@
-import functools, time
+import functools
+import time
 
 from django.db   import connection, reset_queries
-
 
 def query_debugger(func):
     @functools.wraps(func)
