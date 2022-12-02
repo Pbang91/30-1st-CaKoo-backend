@@ -10,14 +10,13 @@ from config.settings import SECRET_KEY, ALGORITHM
 
 from .models import User
 
-
 class UserSignUpSerializer(serializers.ModelSerializer):
     class Meta:
         model  = User
         fields = ('name', 'email', 'password', 'phone_number', 'birthdate')
 
         extra_kwargs = {
-            'password' : {'write_only' : True}
+            'password' : {'write_only' : True} # Not show password
         }
         
     def create(self, validated_data : dict):
@@ -39,22 +38,20 @@ class UserSignUpSerializer(serializers.ModelSerializer):
 
         user = User.objects.create(**validated_data)
 
-        del user.password
-
         return user
 
-class UserLoginSerializer(serializers.ModelSerializer):
-    class Meta:
-        model  = User
-        fields = ('email', 'password')
+class UserLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=False, allow_blank=True)
+    password = serializers.CharField(style={'input_type': 'password'})
 
-    def validate(self, validated_data : dict):
-        email    = validated_data.email
-        password = validated_data.password
+    def validate(self, data : dict):
+        print(data)
+        email : str    = data.get('email')
+        password : str = data.get('password')
 
         try:
             user = User.objects.get(email=email)
-        
+            
         except User.DoesNotExist:
             raise serializers.ValidationError({'detail' : 'Invalid User'})
         

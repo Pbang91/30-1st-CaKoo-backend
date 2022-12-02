@@ -1,5 +1,7 @@
 import json
 
+import bcrypt
+
 from django.urls import reverse
 
 from rest_framework.test import APITestCase
@@ -7,16 +9,6 @@ from rest_framework.test import APITestCase
 from .models       import User
 
 class UserSignUpTest(APITestCase):
-    @classmethod
-    def setUpTestData(cls):
-        User.objects.create(
-            name = "user",
-            email = "user@test.com",
-            password = "test1234!",
-            phone_number = "010-0000-0000",
-            birthdate = "1900-01-01"
-        )
-    
     def setUp(self):
         self.url = reverse('signup')
 
@@ -143,5 +135,41 @@ class UserSignUpTest(APITestCase):
             response.json(),
             {
                 "detail" : "Invalid Information"
+            }
+        )
+
+class UserLoginTest(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        password = bcrypt.hashpw("test1234!".encode('utf-8'),bcrypt.gensalt()).decode('utf-8')
+        
+        User.objects.create(
+            name = "user",
+            email = "user@test.com",
+            password = password,
+            phone_number = "010-0000-0000",
+            birthdate = "1900-01-01"
+        )
+    
+    def setUp(self):
+        self.url = reverse('login')
+    
+    def test_success_user_login(self):
+        data = {
+            'email' : 'user@test.com',
+            'password' : "test1234!"
+        }
+        
+        url = self.url
+        
+        response = self.client.post(url, data=json.dumps(data), content_type='application/json')
+
+        toten = response.json()['access_token']
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "access_token" : toten
             }
         )
