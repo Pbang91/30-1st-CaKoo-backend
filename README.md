@@ -1,7 +1,7 @@
-<img src ="https://user-images.githubusercontent.com/90089275/158053748-d2aa6770-7bb9-4ad2-a1e4-606143467ec6.png" width="200" height="300">
+<img src ="https://user-images.githubusercontent.com/90089275/158053748-d2aa6770-7bb9-4ad2-a1e4-606143467ec6.png" width="100" height="200">
 
 <br><br>
-
+## 현재 DRF를 적용하여 리팩토링 중입니다.
 ---
 # Target site
 <img src = "https://user-images.githubusercontent.com/90089275/158053540-dbe10e54-bdf5-40a6-8a10-2f8730f4abda.png" width="1000" height="500">
