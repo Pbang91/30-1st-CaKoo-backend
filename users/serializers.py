@@ -1,4 +1,5 @@
 import re
+from typing import OrderedDict
 from datetime import datetime, timedelta
 
 import jwt
@@ -19,7 +20,7 @@ class UserSignUpSerializer(serializers.ModelSerializer):
             'password' : {'write_only' : True} # Not show password
         }
         
-    def create(self, validated_data : dict):
+    def create(self, validated_data : OrderedDict):
         email : str    = validated_data.get('email')
         password : str = validated_data.get('password')
         
@@ -44,8 +45,7 @@ class UserLoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False, allow_blank=True)
     password = serializers.CharField(style={'input_type': 'password'})
 
-    def validate(self, data : dict):
-        print(data)
+    def validate(self, data : OrderedDict):
         email : str    = data.get('email')
         password : str = data.get('password')
 

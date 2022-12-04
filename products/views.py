@@ -1,9 +1,17 @@
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+
 from django.http      import JsonResponse
 from django.views     import View
 from django.db.models import Min, Q, Prefetch
 
 from products.models  import Product, ProductSize, Size
 from decorator        import query_debugger
+
+class ProductDetailView(APIView):
+    pass
 
 class ProductDetailView(View):
     @query_debugger
