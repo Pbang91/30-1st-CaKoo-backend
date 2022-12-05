@@ -1,5 +1,3 @@
-from django.db.models import Min, Q, Prefetch
-
 from rest_framework import serializers
 
 from .models import Product, ProductSize, Size, ProductImage, InformationImage
@@ -14,28 +12,31 @@ class ProductImageSerializer(serializers.ModelSerializer):
         model  = ProductImage
         fields = ('sequence', 'url')
 
-class SizeSerializer(serializers.ModelSerializer):
+class SizeSerializer(serializers.ModelSerializer):    
     class Meta:
         model  = Size
-        fields = "__all__"
+        fields = ("size",)
 
 class ProductSizeSerializer(serializers.ModelSerializer):
     size = SizeSerializer(read_only=True)
     
     class Meta:
         model  = ProductSize
-        fields = "__all__"
+        fields = ("price", "size")
+
+    @classmethod
+    def setup_preloading(cls, queryset):
+        return queryset.select_related('size')
 
 class ProductDetailSerializer(serializers.ModelSerializer):
-    product_size      = ProductSizeSerializer(read_only=True)
-    product_image     = ProductImageSerializer(read_only=True)
-    information_image = InformationImageSerializer(read_only=True)
+    base_price        = serializers.SerializerMethodField(method_name="get_base_price")
+    productimages     = ProductImageSerializer(many=True) #models.ProductImage의 related_name과 같게 설정
+    informationimages = InformationImageSerializer(many=True)
+    productsizes      = ProductSizeSerializer(many=True)
     
     class Meta:
         model  = Product
-        fields = "__all__"
+        fields = ("name", "description", "base_price", "thumbnail", "discount_rate", "productimages", "informationimages", "productsizes")
 
-    def validate(self, product_id : int):
-        product = Product.objects.filter(id=product_id).annotate(base_price=Min("productsizes__price"))[0]
-
-        return product
+    def get_base_price(self, obj):
+        return obj.base_price
