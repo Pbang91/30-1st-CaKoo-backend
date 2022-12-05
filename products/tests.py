@@ -1,7 +1,3 @@
-import json
-
-from django.urls import reverse
-
 from rest_framework.test import APITestCase
 
 from .models import Product, ProductSize, Size, ProductImage, InformationImage
@@ -53,7 +49,6 @@ class ProductDetailTest(APITestCase):
 
         InformationImage.objects.bulk_create(create_data)
     
-    @classmethod
     def tearDown(self):
         Size.objects.all().delete()
         Product.objects.all().delete()
@@ -128,9 +123,14 @@ class ProductListTest(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        s1 = Size.objects.create(size="Mini")
-        s2 = Size.objects.create(size="1호")
+        Size.objects.create(id=1, size="Mini")
+        Size.objects.create(id=2, size="1호")
+        Size.objects.create(id=3, size="2호")
 
+        s1 = Size.objects.get(id=1)
+        s2 = Size.objects.get(id=2)
+        s3 = Size.objects.get(id=3)
+        
         p1 = Product.objects.create(
             id = 1,
             name = "과일타르트케이크",
@@ -168,9 +168,17 @@ class ProductListTest(APITestCase):
             size = s2
         )
 
+        ProductSize.objects.create(
+            id = 4,
+            price = 35000,
+            product = p2,
+            size = s3
+        )
+
         p1.sizes.add(s1)
         p1.sizes.add(s2)
         p2.sizes.add(s2)
+        p2.sizes.add(s3)
 
         create_data = [ProductImage(sequence=1,url="https://tmp.test/img1.jpeg", product=p1), ProductImage(sequence=2,url="https://tmp.test/img2.jpeg", product=p1)]
 
@@ -183,7 +191,6 @@ class ProductListTest(APITestCase):
     def setUp(self):
        self.url = "/api/products/" 
     
-    @classmethod
     def tearDown(self):
         Size.objects.all().delete()
         Product.objects.all().delete()
@@ -191,7 +198,7 @@ class ProductListTest(APITestCase):
         ProductImage.objects.all().delete()
         InformationImage.objects.all().delete()
     
-    def test_success_product_view_list(self):
+    def test_success_product_list_without_any_condition(self):
         url = self.url
         
         response = self.client.get(url, content_type='application/json')
@@ -211,6 +218,12 @@ class ProductListTest(APITestCase):
                             "price": "30000.00",
                             "size": {
                                 "size": "1호"
+                            }
+                        },
+                        {
+                            "price" : "35000.00",
+                            "size" : {
+                                "size" : "2호"
                             }
                         }
                     ]
@@ -236,5 +249,222 @@ class ProductListTest(APITestCase):
                         }
                     ]
                 }
+            ]
+        )
+    
+    def test_success_product_list_with_sorting_old(self):
+        url = self.url
+        sort = "old"
+        response = self.client.get(f"{url}?sort={sort}", content_type='application/json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            [
+                {
+                    "name": "과일타르트케이크",
+                    "description": "상큼한 과일로 장식한 케익",
+                    "base_price": 18000.0,
+                    "thumbnail": "https://test.test/delicious-cake1.jpeg",
+                    "discount_rate": "0.80",
+                    "productsizes": [
+                        {
+                            "price": "18000.00",
+                            "size": {
+                                "size": "Mini"
+                            }
+                        },
+                        {
+                            "price": "20000.00",
+                            "size": {
+                                "size": "1호"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "그냥타르트케이크",
+                    "description": "그냥타르트",
+                    "base_price": 30000.0,
+                    "thumbnail": "https://test.test/delicious-cake2.jpeg",
+                    "discount_rate": "0.80",
+                    "productsizes": [
+                        {
+                            "price": "30000.00",
+                            "size": {
+                                "size": "1호"
+                            }
+                        },
+                        {
+                            "price" : "35000.00",
+                            "size" : {
+                                "size" : "2호"
+                            }
+                        }
+                    ]
+                },
+            ]
+        )
+    
+    def test_success_product_list_with_sorting_expensive(self):
+        url = self.url
+        sort = "expensive"
+        response = self.client.get(f"{url}?sort={sort}", content_type='application/json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            [
+                {
+                    "name": "그냥타르트케이크",
+                    "description": "그냥타르트",
+                    "base_price": 30000.0,
+                    "thumbnail": "https://test.test/delicious-cake2.jpeg",
+                    "discount_rate": "0.80",
+                    "productsizes": [
+                        {
+                            "price": "30000.00",
+                            "size": {
+                                "size": "1호"
+                            }
+                        },
+                        {
+                            "price" : "35000.00",
+                            "size" : {
+                                "size" : "2호"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "과일타르트케이크",
+                    "description": "상큼한 과일로 장식한 케익",
+                    "base_price": 18000.0,
+                    "thumbnail": "https://test.test/delicious-cake1.jpeg",
+                    "discount_rate": "0.80",
+                    "productsizes": [
+                        {
+                            "price": "18000.00",
+                            "size": {
+                                "size": "Mini"
+                            }
+                        },
+                        {
+                            "price": "20000.00",
+                            "size": {
+                                "size": "1호"
+                            }
+                        }
+                    ]
+                },
+            ]
+        )
+
+    def test_success_product_list_with_sorting_cheap(self):
+        url = self.url
+        sort = "cheap"
+        response = self.client.get(f"{url}?sort={sort}", content_type='application/json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            [
+                {
+                    "name": "과일타르트케이크",
+                    "description": "상큼한 과일로 장식한 케익",
+                    "base_price": 18000.0,
+                    "thumbnail": "https://test.test/delicious-cake1.jpeg",
+                    "discount_rate": "0.80",
+                    "productsizes": [
+                        {
+                            "price": "18000.00",
+                            "size": {
+                                "size": "Mini"
+                            }
+                        },
+                        {
+                            "price": "20000.00",
+                            "size": {
+                                "size": "1호"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "그냥타르트케이크",
+                    "description": "그냥타르트",
+                    "base_price": 30000.0,
+                    "thumbnail": "https://test.test/delicious-cake2.jpeg",
+                    "discount_rate": "0.80",
+                    "productsizes": [
+                        {
+                            "price": "30000.00",
+                            "size": {
+                                "size": "1호"
+                            }
+                        },
+                        {
+                            "price" : "35000.00",
+                            "size" : {
+                                "size" : "2호"
+                            }
+                        }
+                    ]
+                },
+            ]
+        )
+    
+    def test_success_product_list_with_sort_and_size(self):
+        url = self.url
+        sort = "cheap"
+        size = "1,3"
+        response = self.client.get(f"{url}?sort={sort}&size={size}", content_type='application/json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            [
+                {
+                    "name": "과일타르트케이크",
+                    "description": "상큼한 과일로 장식한 케익",
+                    "base_price": 18000.0,
+                    "thumbnail": "https://test.test/delicious-cake1.jpeg",
+                    "discount_rate": "0.80",
+                    "productsizes": [
+                        {
+                            "price": "18000.00",
+                            "size": {
+                                "size": "Mini"
+                            }
+                        },
+                        {
+                            "price": "20000.00",
+                            "size": {
+                                "size": "1호"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "그냥타르트케이크",
+                    "description": "그냥타르트",
+                    "base_price": 30000.0,
+                    "thumbnail": "https://test.test/delicious-cake2.jpeg",
+                    "discount_rate": "0.80",
+                    "productsizes": [
+                        {
+                            "price": "30000.00",
+                            "size": {
+                                "size": "1호"
+                            }
+                        },
+                        {
+                            "price" : "35000.00",
+                            "size" : {
+                                "size" : "2호"
+                            }
+                        }
+                    ]
+                },
             ]
         )
