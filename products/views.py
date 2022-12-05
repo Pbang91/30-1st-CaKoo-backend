@@ -1,43 +1,39 @@
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+
 from django.http      import JsonResponse
 from django.views     import View
 from django.db.models import Min, Q, Prefetch
 
-from products.models  import Product, ProductSize, Size
-from decorator        import query_debugger
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 
-class ProductDetailView(View):
+from decorator import query_debugger
+
+from .models import Product, ProductSize, Size
+from .serializers import ProductDetailSerializer
+
+permission_classes = [AllowAny]
+
+product_id = openapi.Parameter('product_id', openapi.IN_PATH, required=True, type=openapi.TYPE_INTEGER)
+
+class ProductDetailView(APIView):
+    @swagger_auto_schema(manual_parameters=[product_id], responses={200 : ProductDetailSerializer})
     @query_debugger
-    def get(self, request, product_id):
+    def get(self, requset, product_id):
         try:
-            products : list = [product for product in Product.objects.filter(id = product_id)\
-                                                                     .annotate(base_price=Min("productsizes__price"))
-                                                                     .prefetch_related(Prefetch('productimages'),
-                                                                                       Prefetch('informationimages'),
-                                                                                       Prefetch('productsizes', queryset=ProductSize.objects.select_related('size')))]
-            product          = products[0]
-            product_urls     = [image.url for image in product.productimages.all()]
-            information_urls = [information_image.url for information_image in product.informationimages.all()]
+            product = Product.objects.annotate(base_price=Min("productsizes__price"))\
+                                    .prefetch_related(Prefetch('productsizes', queryset=ProductSize.objects.select_related('size')))\
+                                    .get(id=product_id)
             
-            sizes = [{
-                'size_id' : product_size.size.id,
-                'size'    : product_size.size.size,
-                'price'   : product_size.price
-            } for product_size in product.productsizes.all()]
-        
-            result = {
-                'description'        : product.description,
-                'name'               : product.name,
-                'base_price'         : product.base_price,
-                'sizes'              : sizes,
-                'discount_rate'      : product.discount_rate,
-                'product_images'     : product_urls,
-                'information_images' : information_urls
-            }
+            serializer = ProductDetailSerializer(product)
             
-            return JsonResponse({"message" : result}, status = 200)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         
-        except IndexError:
-            return JsonResponse({"message" : "INVALID_PRODUCT"}, status = 404)
+        except Product.DoesNotExist:
+            return Response(data={"detail" : "Invalid Product"}, status=status.HTTP_400_BAD_REQUEST)
 
 class ProductsView(View):
     @query_debugger
