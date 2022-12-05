@@ -173,3 +173,73 @@ class UserLoginTest(APITestCase):
                 "access_token" : toten
             }
         )
+    
+    def test_fail_user_login_invalid_email(self):
+        data = {
+            'email' : "user1@test.com",
+            "password" : "test1234!"
+        }
+
+        url = self.url
+
+        response = self.client.post(url, data=json.dumps(data), content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {
+                'detail' : ['Invalid User']
+            }
+        )
+    
+    def test_fail_user_login_empty_email(self):
+        data = {
+            "password" : "test1234!"
+        }
+
+        url = self.url
+
+        response = self.client.post(url, data=json.dumps(data), content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {
+                'non_field_errors': ['Invalid input.']
+            }
+        )
+
+    def test_fail_user_login_invalid_password(self):
+        data = {
+            'email' : "user@test.com",
+            "password" : "test1234!!"
+        }
+
+        url = self.url
+
+        response = self.client.post(url, data=json.dumps(data), content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {
+                'detail' : ['Invalid User']
+            }
+        )
+    
+    def test_fail_user_login_empty_password(self):
+        data = {
+            "email" : "user@test.com"
+        }
+
+        url = self.url
+
+        response = self.client.post(url, data=json.dumps(data), content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {
+                'password': ['This field is required.']
+            }
+        )

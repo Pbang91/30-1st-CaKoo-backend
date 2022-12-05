@@ -42,12 +42,15 @@ class UserSignUpSerializer(serializers.ModelSerializer):
         return user
 
 class UserLoginSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=False, allow_blank=True)
+    email    = serializers.EmailField(required=False, allow_blank=True)
     password = serializers.CharField(style={'input_type': 'password'})
 
     def validate(self, data : OrderedDict):
         email : str    = data.get('email')
         password : str = data.get('password')
+
+        if not email or not password:
+            raise serializers.ValidationError
 
         try:
             user = User.objects.get(email=email)
