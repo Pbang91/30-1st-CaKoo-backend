@@ -30,7 +30,7 @@ class ProductSizeSerializer(serializers.ModelSerializer):
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     base_price        = serializers.SerializerMethodField(method_name="get_base_price")
-    productimages     = ProductImageSerializer(many=True) #models.ProductImage의 related_name과 같게 설정
+    productimages     = ProductImageSerializer(many=True) #models.ProductImage의 related_name과 같게 설정, many 설정은 Query set이 여러개일 경우 설정
     informationimages = InformationImageSerializer(many=True)
     productsizes      = ProductSizeSerializer(many=True)
     
@@ -40,3 +40,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     def get_base_price(self, obj):
         return obj.base_price
+
+class ProductListSerializer(ProductDetailSerializer):
+    class Meta:
+        model = Product
+        fields = ("name", "description", "base_price", "thumbnail", "discount_rate", "productsizes")
