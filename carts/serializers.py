@@ -1,3 +1,5 @@
+from typing import OrderedDict
+
 from rest_framework import serializers
 
 from products.models import Product, ProductSize
@@ -18,7 +20,6 @@ class ProductSizeSerializer(serializers.ModelSerializer):
         model  = ProductSize
         fields = ("price", "products", "sizes")
 
-
 class CartListSerializer(serializers.ModelSerializer):
     information = ProductSizeSerializer(source="product_size")
     discount_price = serializers.SerializerMethodField(method_name="get_discount_price")
@@ -30,3 +31,13 @@ class CartListSerializer(serializers.ModelSerializer):
     def get_discount_price(self, obj):
         obj.discount_price = int(obj.product_size.price * obj.product_size.product.discount_rate)
         return obj.discount_price
+
+class CartStoreSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cart
+        fields = ("quantity", "user", "product_size")
+
+    def create(self, validated_data : OrderedDict):
+        cart = Cart.objects.create(**validated_data)
+        
+        return cart

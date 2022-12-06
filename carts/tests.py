@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta
 
 import bcrypt
@@ -11,7 +12,7 @@ from products.models import Product, ProductSize, Size
 
 from .models import Cart
 
-class CartListTest(APITestCase):
+class CartTest(APITestCase):
     maxDiff: int = None
 
     @classmethod
@@ -28,8 +29,9 @@ class CartListTest(APITestCase):
         cls.f_client = APIClient()
 
         token = jwt.encode({'user_id' : cls.user.id, 'exp' : datetime.utcnow() + timedelta(days=2)}, SECRET_KEY, ALGORITHM)
-        
+
         cls.f_client.credentials(HTTP_AUTHORIZATION=token)
+
         # cls.f_client.force_authenticate(user=cls.user, token=token)
 
         size_create_data = [Size(id=1, size="Mini"), Size(id=2, size='1호'), Size(id=3, size='2호'), Size(id=4, size='3호')]
@@ -177,4 +179,55 @@ class CartListTest(APITestCase):
                     "discount_price" : 28500,
                 }
             ]
+        )
+
+    def test_success_empty_cart_list_view(self):
+        Cart.objects.all().delete()
+
+        response = self.f_client.get('/api/carts/', content_type='application/json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                'detail' : 'Empty Cart'
+            }
+        )
+    
+    def test_success_put_cart_list(self):
+        data = {"size_id" : 2, "product_id" : 1, "quantity" : 4}
+
+        response = self.f_client.post('/api/carts/', data=json.dumps(data), content_type="application/json")
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            response.json(),
+            {
+                'detail' : 'Success'
+            }
+        )
+
+    def test_fail_cart_list_due_to_unauthorized_user(self):
+        response = self.client.get('/api/carts/', content_type='application/json')
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(
+            response.json(),
+            {
+                "detail" : "No Authorization In Header"
+            }
+        )
+    
+    def test_fail_cart_list_due_to_non_exist_user(self):
+        token = jwt.encode({'user_id' : 155, 'exp' : datetime.utcnow() + timedelta(days=2)}, SECRET_KEY, ALGORITHM)
+        self.f_client.credentials(HTTP_AUTHORIZATION=token)
+        
+        response = self.f_client.get('/api/carts/', content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {
+                "detail" : "Invalid User"
+            }
         )
