@@ -33,7 +33,7 @@ class UserSignUpSerializer(serializers.ModelSerializer):
         if not validated_password or not validated_email:
             raise serializers.ValidationError({"detail" : "Invalid Information"})
 
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'),bcrypt.gensalt()).decode('utf-8')
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         
         validated_data['password'] = hashed_password
 
