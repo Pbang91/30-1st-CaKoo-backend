@@ -7,7 +7,7 @@ class ProductDetailTest(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        create_data = [Size(size="Mini"), Size(size='1호'), Size(size='2호'), Size(size='3호')]
+        create_data = [Size(id=1, size="Mini"), Size(id=2, size='1호'), Size(id=3, size='2호'), Size(id=4, size='3호')]
         
         Size.objects.bulk_create(
             create_data
@@ -48,13 +48,6 @@ class ProductDetailTest(APITestCase):
         create_data = [InformationImage(sequence=1,url="https://test.test/img1.jpeg", product=p1), InformationImage(sequence=2,url="https://test.test/img2.jpeg", product=p1)]
 
         InformationImage.objects.bulk_create(create_data)
-    
-    def tearDown(self):
-        Size.objects.all().delete()
-        Product.objects.all().delete()
-        ProductSize.objects.all().delete()
-        ProductImage.objects.all().delete()
-        InformationImage.objects.all().delete()
 
     def test_success_product_view_detail(self):
         url = "/api/products/1"
@@ -190,13 +183,6 @@ class ProductListTest(APITestCase):
     
     def setUp(self):
        self.url = "/api/products/" 
-    
-    def tearDown(self):
-        Size.objects.all().delete()
-        Product.objects.all().delete()
-        ProductSize.objects.all().delete()
-        ProductImage.objects.all().delete()
-        InformationImage.objects.all().delete()
     
     def test_success_product_list_without_any_condition(self):
         url = self.url

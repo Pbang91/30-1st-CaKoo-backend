@@ -1,45 +1,32 @@
 import json
 
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+
+from .serializers import CartListSerializer
+
+
 from django.http    import JsonResponse
-from django.views   import View
 
 from users.utils     import login_decorator
 from products.models import ProductSize
 from .models         import Cart
 from decorator       import query_debugger
 
-class CartView(View):
+permission_classes = [IsAuthenticated]
+
+class CartView(APIView):
     @query_debugger
     @login_decorator
     def get(self, request):
-        try:
-            user  = request.user
-            carts = Cart.objects.filter(user=user).select_related('product_size__product', 'product_size__size')
-            data  = []
+        user = request.user
+        carts = Cart.objects.filter(user=user).select_related('product_size__product', 'product_size__size')
+        
+        serializer = CartListSerializer(carts, many=True)
 
-            for cart in carts:
-                cart = {
-                    "cart_id"       : cart.id,
-                    "product_name"  : cart.product_size.product.name,
-                    "product_size"  : cart.product_size.size.size,
-                    "product_price" : int(cart.product_size.price * cart.product_size.product.discount_rate),
-                    "cart_quantity" : cart.quantity,
-                    "discount_rate" : float(cart.product_size.product.discount_rate),
-                    "thumbnail"     : cart.product_size.product.thumbnail
-                }
-
-                data.append(cart)
-            
-            result = {
-                "user_name"         : user.name,
-                "user_phone_number" : user.phone_number,
-                "data"              : data
-            }
-
-            return JsonResponse({"result" : result}, status = 200)
-
-        except IndexError:
-            return JsonResponse({"message" : "CART_NOT_EXIST"}, status = 404)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @query_debugger
     @login_decorator
