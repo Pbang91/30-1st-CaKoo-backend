@@ -42,7 +42,7 @@ class UserSignUpSerializer(serializers.ModelSerializer):
         return user
 
 class UserLoginSerializer(serializers.Serializer):
-    email    = serializers.EmailField(required=False, allow_blank=True)
+    email    = serializers.EmailField(allow_blank=True)
     password = serializers.CharField(style={'input_type': 'password'})
 
     def validate(self, data : OrderedDict):
