@@ -69,7 +69,7 @@
     * ### Back-end  
         <a href="#"><img src="https://img.shields.io/badge/python-3873A9?style=plastic&logo=python&logoColor=white"/></a>
     <a href="#"><img src="https://img.shields.io/badge/Django-0B4B33?style=plastic&logo=django&logoColor=white"/></a>
-    <a href="#"><img src="https://img.shields.io/badge/Django-092E20?style=plastic&logo=Django-Rest-Framework&logoColor=white"/></a>
+    <a href="#"><img src="https://img.shields.io/badge/Django Rest Framework-092E20?style=plastic&logo=django&logoColor=white">
     <a href="#"><img src="https://img.shields.io/badge/MySQL-005E85?style=plastic&logo=mysql&logoColor=white"/></a>
     <a href="#"><img src="https://img.shields.io/badge/AWS-FF9701?style=plastic&logo=aws&logoColor=white"/></a>
     <a href="#"><img src="https://img.shields.io/badge/bcrypt-525252?style=plastic&logo=bcrypt&logoColor=white"/></a>
