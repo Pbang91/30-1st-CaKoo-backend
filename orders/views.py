@@ -3,41 +3,40 @@ import json, uuid
 from enum          import Enum
 
 from django.http   import JsonResponse
-from django.views  import View
 from django.db     import transaction
 
 from users.utils   import login_decorator
 from orders.models import Order, OrderItem, OrderStatus
 from carts.models  import Cart
 
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+from decorator import query_debugger
+
+from .serializer import OrderSerializer, OrderItemSerializer
+
 class OrderStatusEnum(Enum):
     CONFIRMED = 1  
     CANCELED  = 2
     PENDING   = 3
 
-class OrderView(View):
+class OrderView(APIView):
+    @query_debugger
     @login_decorator
     def get(self, request):
         try:
-            orders = Order.objects.filter(user_id = request.user).select_related('user', 'order_status')
-            result = []
+            orders = Order.objects.filter(user_id = request.user).select_related('user')
             
-            for order in orders:
-                results = {
-                    'orderer' : order.user.name,
-                    'order_number' : order.order_number,
-                    'order_status' : order.order_status.status
-                }
+            serializer = OrderSerializer(orders, many=True)
 
-                result.append(results)
-
-
-            return JsonResponse({"message" : result}, status = 200)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         
         except Order.DoesNotExist:
-            return JsonResponse({"message" : "DOES_NOT_EXIST"})
+            return Response({"detail" : "Invalid User"}, status=status.HTTP_400_BAD_REQUEST)
 
-
+    @query_debugger
     @login_decorator
     def post(self, request):
         try:
@@ -46,32 +45,34 @@ class OrderView(View):
             
             cart_ids     = data["cart_ids"]
             carts        = Cart.objects.filter(user=user, id__in=cart_ids)
-            order_status = OrderStatus.objects.get(id=OrderStatusEnum.CONFIRMED.value) 
-
-            with transaction.atomic():
-                order = Order.objects.create(
-                        user            = user, 
-                        sender_name     = user.name,
-                        order_number    = uuid.uuid4(),
-                        order_status    = order_status,
-                        address         = data["address"],
-                        recipient_name  = data["recipient_name"],
-                        recipient_phone = data["recipient_phone"],
-                )
+            order_status = OrderStatus.objects.get(id=OrderStatusEnum.CONFIRMED.value)
+        
+            request.data['user'] = user
+            request.data['sender_name'] = user.name
+            request.data['order_number'] = str(uuid.uuid4())
+            request.data['order_status'] = order_status
             
-                order_items = [
-                    OrderItem(
-                        order        = order,
-                        product_size = cart.product_size,
-                        quantity     = cart.quantity
-                    ) for cart in carts
-                ]
+            with transaction.atomic():                
+                order_serializer = OrderSerializer(data=request.data)
                 
-                OrderItem.objects.bulk_create(order_items) 
-                    
+                if order_serializer.is_valid():
+                    print(order_serializer.data['id'])
+                    order_items = [
+                        OrderItem(
+                            order        = order_serializer,
+                            product_size = cart.product_size,
+                            quantity     = cart.quantity
+                        ) for cart in carts
+                    ]
                 
-                carts.delete()
-                return JsonResponse({"message" : "SUCCESS"}, status = 201)
+                # OrderItem.objects.bulk_create(order_items) 
+
+                    order_item_serializer = OrderItemSerializer(order_items, many=True)
+
+                    if order_item_serializer.is_valid():
+                        carts.delete()
+
+                        return Response({'detail' : 'Success'}, status=status.HTTP_201_CREATED)
 
         except transaction.TransactionManagementError:
             return JsonResponse({'message':'TransactionManagementError'}, status = 400)  

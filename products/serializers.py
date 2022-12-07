@@ -24,10 +24,6 @@ class ProductSizeSerializer(serializers.ModelSerializer):
         model  = ProductSize
         fields = ("price", "size")
 
-    @classmethod
-    def setup_preloading(cls, queryset):
-        return queryset.select_related('size')
-
 class ProductDetailSerializer(serializers.ModelSerializer):
     base_price        = serializers.SerializerMethodField(method_name="get_base_price")
     productimages     = ProductImageSerializer(many=True) #models.ProductImage의 related_name과 같게 설정, many 설정은 Query set이 여러개일 경우 설정
