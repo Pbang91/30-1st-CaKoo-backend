@@ -3,7 +3,7 @@ from typing import OrderedDict
 from rest_framework import serializers
 
 from products.models import Product, ProductSize
-from products.serializers import SizeSerializer
+from products.serializers import ProductSizeSerializer
 
 from .models import Cart
 
@@ -12,16 +12,15 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = ("name", "thumbnail", "discount_rate")
 
-class ProductSizeSerializer(serializers.ModelSerializer):
-    sizes = SizeSerializer(source="size")
+class CartProductSizeSerializer(ProductSizeSerializer):
     products = ProductSerializer(source="product")
 
     class Meta:
         model  = ProductSize
-        fields = ("price", "products", "sizes")
+        fields = ("price", "products", "size")
 
 class CartListSerializer(serializers.ModelSerializer):
-    information = ProductSizeSerializer(source="product_size")
+    information = CartProductSizeSerializer(source="product_size")
     discount_price = serializers.SerializerMethodField(method_name="get_discount_price")
     
     class Meta:
@@ -30,6 +29,7 @@ class CartListSerializer(serializers.ModelSerializer):
 
     def get_discount_price(self, obj):
         obj.discount_price = int(obj.product_size.price * obj.product_size.product.discount_rate)
+        
         return obj.discount_price
 
 class CartStoreSerializer(serializers.ModelSerializer):
@@ -41,3 +41,20 @@ class CartStoreSerializer(serializers.ModelSerializer):
         cart = Cart.objects.create(**validated_data)
         
         return cart
+    
+    def update(self, instance : Cart, validated_data : OrderedDict):
+        instance.quantity = validated_data.get('quantity', instance.quantity)
+        instance.user = validated_data.get('user', instance.user)
+        instance.product_size = validated_data.get('product_size', instance.product_size)
+
+        instance.save()
+
+        return instance
+
+class CartSchema(serializers.Serializer):
+    '''
+    CartList 스키마 시리얼라이저[only used for swagger]
+    '''
+    size_id = serializers.IntegerField()
+    product_id = serializers.IntegerField()
+    quantity = serializers.IntegerField()

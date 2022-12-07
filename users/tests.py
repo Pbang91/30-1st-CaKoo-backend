@@ -205,7 +205,7 @@ class UserLoginTest(APITestCase):
         self.assertEqual(
             response.json(),
             {
-                'non_field_errors': ['Invalid input.']
+                'email': ['This field is required.']
             }
         )
 

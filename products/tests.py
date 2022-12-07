@@ -182,7 +182,7 @@ class ProductListTest(APITestCase):
         InformationImage.objects.bulk_create(create_data)
     
     def setUp(self):
-       self.url = "/api/products/" 
+       self.url = "/api/products" 
     
     def test_success_product_list_without_any_condition(self):
         url = self.url
