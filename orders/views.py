@@ -1,13 +1,12 @@
-import json, uuid
+import uuid
+from enum import Enum
 
-from enum          import Enum
+from django.db import transaction
+from django.http import JsonResponse
 
-from django.http   import JsonResponse
-from django.db     import transaction
-
-from users.utils   import login_decorator
+from users.utils import login_decorator
+from carts.models import Cart
 from orders.models import Order, OrderItem, OrderStatus
-from carts.models  import Cart
 
 from rest_framework import status
 from rest_framework.views import APIView
@@ -15,7 +14,7 @@ from rest_framework.response import Response
 
 from decorator import query_debugger
 
-from .serializer import OrderSerializer, OrderItemSerializer
+from .serializer import OrderSerializer
 
 class OrderStatusEnum(Enum):
     CONFIRMED = 1  
@@ -40,39 +39,38 @@ class OrderView(APIView):
     @login_decorator
     def post(self, request):
         try:
-            data = json.loads(request.body)
             user = request.user
             
-            cart_ids     = data["cart_ids"]
+            cart_ids     = request.data["cart_ids"]
             carts        = Cart.objects.filter(user=user, id__in=cart_ids)
             order_status = OrderStatus.objects.get(id=OrderStatusEnum.CONFIRMED.value)
-        
-            request.data['user'] = user
-            request.data['sender_name'] = user.name
-            request.data['order_number'] = str(uuid.uuid4())
-            request.data['order_status'] = order_status
+
+            data = {
+                'user' : user,
+                'address' : request.data['address'],
+                'recipient_name' : request.data['recipient_name'],
+                "recipient_phone" : request.data['recipient_phone'],
+                'sender_name' : user.name,
+                'order_number' : str(uuid.uuid4()),
+                'order_status' : order_status
+            }
             
-            with transaction.atomic():                
-                order_serializer = OrderSerializer(data=request.data)
+            order = Order.objects.create(**data)
+
+            with transaction.atomic():
+                order_items = [
+                    OrderItem(
+                        order        = order,
+                        product_size = cart.product_size,
+                        quantity     = cart.quantity
+                    ) for cart in carts
+                ]
                 
-                if order_serializer.is_valid():
-                    print(order_serializer.data['id'])
-                    order_items = [
-                        OrderItem(
-                            order        = order_serializer,
-                            product_size = cart.product_size,
-                            quantity     = cart.quantity
-                        ) for cart in carts
-                    ]
-                
-                # OrderItem.objects.bulk_create(order_items) 
+                OrderItem.objects.bulk_create(order_items)
 
-                    order_item_serializer = OrderItemSerializer(order_items, many=True)
+                carts.delete()
 
-                    if order_item_serializer.is_valid():
-                        carts.delete()
-
-                        return Response({'detail' : 'Success'}, status=status.HTTP_201_CREATED)
+                return Response({'detail' : 'Success'}, status=status.HTTP_201_CREATED)
 
         except transaction.TransactionManagementError:
             return JsonResponse({'message':'TransactionManagementError'}, status = 400)  

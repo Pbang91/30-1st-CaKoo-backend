@@ -26,5 +26,4 @@ class OrderItemSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data : OrderedDict):
         instance = OrderItem.objects.create(**validated_data)
-
         return instance

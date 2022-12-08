@@ -204,3 +204,74 @@ class OrderTest(APITestCase):
                 'detail' : 'Success'
             }
         )
+    
+    def test_fail_order_get_list_due_to_unauthorized_user(self):
+        '''
+        View Order List
+        '''
+        response = self.client.get('/api/orders', content_type="application/json")
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(
+            response.json(),
+            {
+                "detail" : "No Authorization In Header"
+            }
+        )
+
+    def test_fail_order_get_list_non_exist_user(self):
+        token = jwt.encode({'user_id' : 155, 'exp' : datetime.utcnow() + timedelta(days=2)}, SECRET_KEY, ALGORITHM)
+        self.f_client.credentials(HTTP_AUTHORIZATION=token)
+
+        response = self.f_client.get('/api/orders', content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {
+                "detail" : "Invalid User"
+            }
+        )
+    
+    def test_fail_orders_items_due_to_unauthorized_user(self):
+        Order.objects.all().delete()
+
+        data = {
+            'cart_ids' : [1, 2, 3],
+            'address' : 'test city',
+            'recipient_name' : '아무개',
+            'recipient_phone' : '010-1234-5678'
+        }
+
+        response = self.client.post('/api/orders', data=json.dumps(data), content_type='application/json')
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(
+            response.json(),
+            {
+                "detail" : "No Authorization In Header"
+            }
+        )
+
+    def test_fail_orders_items_non_exist_user(self):
+        token = jwt.encode({'user_id' : 155, 'exp' : datetime.utcnow() + timedelta(days=2)}, SECRET_KEY, ALGORITHM)
+        self.f_client.credentials(HTTP_AUTHORIZATION=token)
+        Order.objects.all().delete()
+
+
+        data = {
+            'cart_ids' : [1, 2, 3],
+            'address' : 'test city',
+            'recipient_name' : '아무개',
+            'recipient_phone' : '010-1234-5678'
+        }
+
+        response = self.f_client.post('/api/orders', data=data, content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {
+                "detail" : "Invalid User"
+            }
+        )
