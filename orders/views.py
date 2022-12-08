@@ -1,64 +1,63 @@
-import json, uuid
+import uuid
+from enum import Enum
 
-from enum          import Enum
+from django.db import transaction
+from django.http import JsonResponse
 
-from django.http   import JsonResponse
-from django.views  import View
-from django.db     import transaction
-
-from users.utils   import login_decorator
+from users.utils import login_decorator
+from carts.models import Cart
 from orders.models import Order, OrderItem, OrderStatus
-from carts.models  import Cart
+
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+from decorator import query_debugger
+
+from .serializer import OrderSerializer
 
 class OrderStatusEnum(Enum):
     CONFIRMED = 1  
     CANCELED  = 2
     PENDING   = 3
 
-class OrderView(View):
+class OrderView(APIView):
+    @query_debugger
     @login_decorator
     def get(self, request):
         try:
-            orders = Order.objects.filter(user_id = request.user).select_related('user', 'order_status')
-            result = []
+            orders = Order.objects.filter(user_id = request.user).select_related('user')
             
-            for order in orders:
-                results = {
-                    'orderer' : order.user.name,
-                    'order_number' : order.order_number,
-                    'order_status' : order.order_status.status
-                }
+            serializer = OrderSerializer(orders, many=True)
 
-                result.append(results)
-
-
-            return JsonResponse({"message" : result}, status = 200)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         
         except Order.DoesNotExist:
-            return JsonResponse({"message" : "DOES_NOT_EXIST"})
+            return Response({"detail" : "Invalid User"}, status=status.HTTP_400_BAD_REQUEST)
 
-
+    @query_debugger
     @login_decorator
     def post(self, request):
         try:
-            data = json.loads(request.body)
             user = request.user
             
-            cart_ids     = data["cart_ids"]
+            cart_ids     = request.data["cart_ids"]
             carts        = Cart.objects.filter(user=user, id__in=cart_ids)
-            order_status = OrderStatus.objects.get(id=OrderStatusEnum.CONFIRMED.value) 
+            order_status = OrderStatus.objects.get(id=OrderStatusEnum.CONFIRMED.value)
+
+            data = {
+                'user' : user,
+                'address' : request.data['address'],
+                'recipient_name' : request.data['recipient_name'],
+                "recipient_phone" : request.data['recipient_phone'],
+                'sender_name' : user.name,
+                'order_number' : str(uuid.uuid4()),
+                'order_status' : order_status
+            }
+            
+            order = Order.objects.create(**data)
 
             with transaction.atomic():
-                order = Order.objects.create(
-                        user            = user, 
-                        sender_name     = user.name,
-                        order_number    = uuid.uuid4(),
-                        order_status    = order_status,
-                        address         = data["address"],
-                        recipient_name  = data["recipient_name"],
-                        recipient_phone = data["recipient_phone"],
-                )
-            
                 order_items = [
                     OrderItem(
                         order        = order,
@@ -67,11 +66,11 @@ class OrderView(View):
                     ) for cart in carts
                 ]
                 
-                OrderItem.objects.bulk_create(order_items) 
-                    
-                
+                OrderItem.objects.bulk_create(order_items)
+
                 carts.delete()
-                return JsonResponse({"message" : "SUCCESS"}, status = 201)
+
+                return Response({'detail' : 'Success'}, status=status.HTTP_201_CREATED)
 
         except transaction.TransactionManagementError:
             return JsonResponse({'message':'TransactionManagementError'}, status = 400)  
