@@ -1,7 +1,6 @@
 <img src ="https://user-images.githubusercontent.com/90089275/158053748-d2aa6770-7bb9-4ad2-a1e4-606143467ec6.png" width="100" height="200">
 
 <br><br>
-## 현재 DRF를 적용하여 리팩토링 중입니다.
 ---
 # Target site
 <img src = "https://user-images.githubusercontent.com/90089275/158053540-dbe10e54-bdf5-40a6-8a10-2f8730f4abda.png" width="1000" height="500">
@@ -32,7 +31,6 @@
 ## 초기기획 및 구현 목표
 * 짧은 기간동안 기능구현에 집중해야하므로 사이트의 디자인과 기획만 클론
 * 개발은 초기세팅부터 전부 직접 구현
-* 사이트 카테고리 중 '꽃다발'만 구현
 * 필수 구현 사항을 회원가입, 로그인, 상품 조회, 장바구니, 주문기능으로 설정 
 * 한 상품에 여러 옵션(사이즈)이 적용될 수 있게 기획
 
