@@ -252,7 +252,7 @@ class CartTest(APITestCase):
         self.assertEqual(
             response.json(),
             {
-                "detail" : "No Authorization In Header"
+                "detail" : "Unauthorized User"
             }
         )
     
@@ -308,7 +308,7 @@ class CartTest(APITestCase):
         self.assertEqual(
             response.json(),
             {
-                "detail" : "No Authorization In Header"
+                "detail" : "Unauthorized User"
             }
         )
     

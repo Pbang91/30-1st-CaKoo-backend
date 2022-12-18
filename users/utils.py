@@ -26,15 +26,15 @@ def login_decorator(func):
             return func(self, request, *args, **kwargs)
         
         except jwt.exceptions.DecodeError:
-            return JsonResponse({"message" : "Invalid Token"}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({"detail" : "Invalid Token"}, status=status.HTTP_400_BAD_REQUEST)
         
         except jwt.exceptions.ExpiredSignatureError:
-            return JsonResponse({"message" : "Invalid Token"}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({"detail" : "Invalid Token"}, status=status.HTTP_400_BAD_REQUEST)
         
         except User.DoesNotExist:
-            return JsonResponse({"message" : "Invalid User"}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({"detail" : "Invalid User"}, status=status.HTTP_400_BAD_REQUEST)
 
         except KeyError:
-            return JsonResponse({"message" : "Invalid User"}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({"detail" : "Invalid User"}, status=status.HTTP_400_BAD_REQUEST)
 
     return wrapper
