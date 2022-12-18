@@ -73,10 +73,10 @@ class OrderView(APIView):
                 return Response({'detail' : 'Success'}, status=status.HTTP_201_CREATED)
 
         except transaction.TransactionManagementError:
-            return JsonResponse({'message':'TransactionManagementError'}, status = 400)  
+            return JsonResponse({'detail':'Transaction Management Error'}, status = 400)  
 
         except KeyError:
-            return JsonResponse({"message" : "KEYERROR"}, status = 400)
+            return JsonResponse({"datail" : "Invalid User"}, status = 400)
         
         except (Cart.DoesNotExist, OrderStatus.DoesNotExist):
-            return JsonResponse({"message" : "INVALID_ERROR"}, status = 400)
+            return JsonResponse({"detail" : "Invalid Order"}, status = 400)
