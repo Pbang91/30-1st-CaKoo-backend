@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class Product(models.Model):
     name          = models.CharField(max_length=50)
@@ -41,3 +42,10 @@ class InformationImage(models.Model):
     
     class Meta:
         db_table = "information_images"
+
+class Stock(models.Model):
+    quantity = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(1000)])
+    product  = models.ForeignKey("Product", related_name='stocks', on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'stocks'
