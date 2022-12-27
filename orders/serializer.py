@@ -19,11 +19,13 @@ class OrderSerializer(serializers.ModelSerializer):
     def create(self, validated_data : OrderedDict):
         return Order.objects.create(**validated_data)
 
-class OrderItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OrderItem
-        fields = "__all__"
-    
-    def create(self, validated_data : OrderedDict):
-        instance = OrderItem.objects.create(**validated_data)
-        return instance
+class OrderSchemaSerializer(serializers.Serializer):
+    '''
+    Order Post Body Schema
+    Only Use Swagger
+    '''
+    carts_ids       = serializers.ListField()
+    address         = serializers.CharField()
+    recipient_name  = serializers.CharField()
+    recipient_phone = serializers.CharField()
+    sender_name     = serializers.CharField(required=False)

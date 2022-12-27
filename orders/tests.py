@@ -9,7 +9,7 @@ from rest_framework.test import APITestCase, APIClient
 
 from users.models import User
 from carts.models import Cart
-from products.models import Size, Product, ProductSize
+from products.models import Size, Product, ProductSize, Stock
 from config.settings import SECRET_KEY, ALGORITHM
 
 from .models import Order, OrderItem, OrderStatus
@@ -57,6 +57,9 @@ class OrderTest(APITestCase):
 
         Product.objects.bulk_create(product_create_data)
 
+        Stock.objects.create(quantity=2, product_id=1)
+        Stock.objects.create(quantity=15, product_id=2)
+
         s1 = Size.objects.get(id=1)
         s2 = Size.objects.get(id=2)
         p1 = Product.objects.get(id=1)
@@ -90,7 +93,7 @@ class OrderTest(APITestCase):
         ps3 = ProductSize.objects.get(id=3)
 
         cart_create_data = [
-            Cart(id=1, quantity=2, user=cls.user, product_size=ps1),
+            Cart(id=1, quantity=1, user=cls.user, product_size=ps1),
             Cart(id=2, quantity=1, user=cls.user, product_size=ps2),
             Cart(id=3, quantity=1, user=cls.user, product_size=ps3),
         ]
@@ -215,7 +218,7 @@ class OrderTest(APITestCase):
         self.assertEqual(
             response.json(),
             {
-                "detail" : "No Authorization In Header"
+                "detail" : "Unauthorized User"
             }
         )
 
@@ -234,6 +237,9 @@ class OrderTest(APITestCase):
         )
     
     def test_fail_orders_items_due_to_unauthorized_user(self):
+        '''
+        Order Items
+        '''
         Order.objects.all().delete()
 
         data = {
@@ -249,7 +255,7 @@ class OrderTest(APITestCase):
         self.assertEqual(
             response.json(),
             {
-                "detail" : "No Authorization In Header"
+                "detail" : "Unauthorized User"
             }
         )
 
@@ -273,5 +279,28 @@ class OrderTest(APITestCase):
             response.json(),
             {
                 "detail" : "Invalid User"
+            }
+        )
+    
+    def test_fail_order_items_due_to_invalid_quantity(self):
+        modified_cart = Cart.objects.get(id=3)
+
+        modified_cart.quantity += 200
+        modified_cart.save()
+
+        data = {
+            'cart_ids' : [1, 2, 3],
+            'address' : 'test city',
+            'recipient_name' : '아무개',
+            'recipient_phone' : '010-1234-5678'
+        }
+
+        response = self.f_client.post('/api/orders', data=json.dumps(data), content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {
+                'detail' : "Out Of Stock"
             }
         )
